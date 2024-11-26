@@ -18,12 +18,11 @@ public:
 
 private:
    void load_data_from_file(const std::string& filename);
-   bool validate_syntax();
    std::string parse(const std::string& section_var);
    std::string crop(const std::string& str);
 
    template<typename Type>
-   Type convert(const std::string& value);
+   inline Type convert(const std::string& value);
 
 
    std::map<std::string, std::map<std::string, std::string>> data_buffer;
@@ -35,4 +34,22 @@ Type ini_parser::get_value(const std::string& section_and_value)
    std::string result = parse(section_and_value);
 
    return convert<Type>(result);
+}
+
+template<>
+inline int ini_parser::convert<int>(const std::string& value)
+{
+   return std::stoi(value);
+}
+
+template<>
+inline double ini_parser::convert<double>(const std::string& value)
+{
+   return std::stod(value);
+}
+
+template<>
+inline std::string ini_parser::convert<std::string>(const std::string& value)
+{
+   return value;
 }

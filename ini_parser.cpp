@@ -4,11 +4,6 @@
 ini_parser::ini_parser(std::string filename)
 {
    load_data_from_file(filename);
-
-   if (!validate_syntax())
-   {
-      throw std::runtime_error("Ошибочный синтаксис");
-   }
 }
 
 
@@ -21,11 +16,14 @@ void ini_parser::load_data_from_file(const std::string& filename)
       throw std::runtime_error("Не удалось открыть файл: " + filename);
    }
 
+   int line_number = 0;
    std::string line;
    std::string current_section;
 
    while (std::getline(file, line))
    {
+      line_number++;
+
       line = crop(line);
 
       if (line.empty() || line[0] == ';')
@@ -41,9 +39,9 @@ void ini_parser::load_data_from_file(const std::string& filename)
       {
          auto equal_sign = line.find('=');
 
-         if (equal_sign == std::string::npos)
+         if (equal_sign == std::string::npos || equal_sign == 0)
          {
-            throw std::runtime_error("Неверная переменная: " + line);
+            throw std::runtime_error("Ошибка в строке #" + std::to_string(line_number) + ": " + line);
          }
 
          std::string key = crop(line.substr(0, equal_sign));
@@ -55,20 +53,12 @@ void ini_parser::load_data_from_file(const std::string& filename)
          }
          else
          {
-            throw std::runtime_error("Неверное : " + line);
+            throw std::runtime_error("Ошибка в строке #" + std::to_string(line_number) + ": " + line);
          }
       }
    }
 
    file.close();
-}
-
-bool ini_parser::validate_syntax()
-{
-
-   // TODO: проверка на корректность синтаксиса
-
-   return !data_buffer.empty();
 }
 
 std::string ini_parser::parse(const std::string& section_var)
@@ -86,13 +76,22 @@ std::string ini_parser::parse(const std::string& section_var)
    auto section_iter = data_buffer.find(section);
    if (section_iter == data_buffer.end())
    {
-      throw std::runtime_error("Section не найдена: " + section);
+      throw std::runtime_error(section + " не найдена или не содержит значений");
    }
 
    auto var_iter = section_iter->second.find(var);
    if (var_iter == section_iter->second.end())
    {
-      throw std::runtime_error("Переменная не найдена в секции " + section + ": " + var);
+      std::cout << "Доступные переменные в этой секции:" << std::endl;
+
+      var_iter = section_iter->second.begin();
+      while (var_iter != section_iter->second.end())
+      {
+         std::cout << var_iter->first << std::endl;
+         var_iter++;
+      }
+
+      throw std::runtime_error("Переменная не найдена " + section + ": " + var);
    }
 
    return var_iter->second;
@@ -112,23 +111,4 @@ std::string ini_parser::crop(const std::string& str)
    }
    
    return std::string(start, end);
-}
-
-
-template<>
-int ini_parser::convert<int>(const std::string& value)
-{
-   return std::stoi(value);
-}
-
-template<>
-double ini_parser::convert<double>(const std::string& value)
-{
-   return std::stod(value);
-}
-
-template<>
-std::string ini_parser::convert<std::string>(const std::string& value)
-{
-   return value;
 }

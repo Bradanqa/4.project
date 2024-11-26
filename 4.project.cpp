@@ -3,6 +3,8 @@
 
 int main()
 {
+   setlocale(LC_ALL, "ru-RU.UTF-8");
+
    try
    {
       ini_parser parser("file2.ini");
